@@ -219,8 +219,16 @@ class Trainer(object):
     def test_one_epoch(self):
 
         stat_dict = {}
+        old_model = self.model
+        try:
+            self.model = self.model.module
+        except:
+            pass
+        
         self.model.eval()
         cnt = 0
+
+        print('\n\n##------------- EVAL -------------##\n')
 
         for batch_idx, batch_data_label in enumerate(self.test_dataloader):
             if batch_idx % 200 == 0:
@@ -244,7 +252,7 @@ class Trainer(object):
             print('%s: %f' % (key, stat_dict[key] / cnt),
                   end=' ')
         
-        print()
+        print('\n\n##------------- END -------------##\n')
         # Log statistics
         BATCH_SIZE = self.test_dataloader.batch_size
         self.TEST_VISUALIZER.log_scalars(
@@ -252,6 +260,8 @@ class Trainer(object):
              for key in stat_dict},
             (self.epoch + 1) * len(self.test_dataloader) * BATCH_SIZE)
         
+        self.model = old_model
+
         miou = stat_dict['miou'] / (float(batch_idx + 1))
         return miou
 
