@@ -182,9 +182,9 @@ class Trainer(object):
                 if key not in stat_dict: stat_dict[key] = 0
                 stat_dict[key] += loss_dict[key].item()
 
-            batch_interval = 50
+            batch_interval = 100
             BATCH_SIZE = self.train_dataloader.batch_size
-            if (batch_idx + 1) % batch_interval == 0:
+            if batch_idx % batch_interval == 0:
                 print('batch: %03d:' % (batch_idx + 1), end=' ')
                 stat_dict['example/sec'] = BATCH_SIZE * 1.0 / (
                     stat_dict['step_time'] / batch_interval)

@@ -16,7 +16,7 @@ parser.add_argument('--test_dataset',
 parser.add_argument('--checkpoint_path',
                     default=None,
                     help='Model checkpoint path [default: None]')
-parser.add_argument('--batch_size', type=int, default=8)
+parser.add_argument('--batch_size', type=int, default=4)
 parser.add_argument('--vis',
                     action='store_true',
                     help='whether do the visualization')

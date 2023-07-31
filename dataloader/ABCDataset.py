@@ -69,24 +69,27 @@ class ABCDataset(data.Dataset):
         ret_dict['T_param'] = primitive_param
         
         # set small number primitive as background
-        counter = Counter(labels)
-        mapper = np.ones([labels.max() + 1]) * -1
-        keys = [k for k, v in counter.items() if v > 100]
-        if len(keys):
-            mapper[keys] = np.arange(len(keys))
-        label = mapper[labels]
-        ret_dict['I_gt'] = label.astype(int)
-        clean_primitives = np.ones_like(primitives) * -1
-        valid_mask = label != -1
-        clean_primitives[valid_mask] = primitives[valid_mask]
-        ret_dict['T_gt'] = clean_primitives.astype(int)
+        # counter = Counter(labels)
+        # mapper = np.ones([labels.max() + 1]) * -1
+        # keys = [k for k, v in counter.items() if v > 100]
+        # if len(keys):
+        #     mapper[keys] = np.arange(len(keys))
+        # label = mapper[labels]
+        # ret_dict['I_gt'] = label.astype(int)
+        # clean_primitives = np.ones_like(primitives) * -1
+        # valid_mask = label != -1
+        # clean_primitives[valid_mask] = primitives[valid_mask]
+        # ret_dict['T_gt'] = clean_primitives.astype(int)
+
+        ret_dict['I_gt'] = labels.astype(int)
+        ret_dict['T_gt'] = primitives.astype(int)
 
         ret_dict['index'] = self.data_list[index]
 
-        small_idx = label == -1
-        full_labels = label
-        full_labels[small_idx] = labels[small_idx] + len(keys)
-        ret_dict['I_gt_clean'] = full_labels.astype(int)
+        # small_idx = label == -1
+        # full_labels = label
+        # full_labels[small_idx] = labels[small_idx] + len(keys)
+        # ret_dict['I_gt_clean'] = full_labels.astype(int)
         return ret_dict
 
     def __len__(self):

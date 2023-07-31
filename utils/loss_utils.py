@@ -181,6 +181,7 @@ def compute_type_miou_abc(type_per_point, T_gt, cluster_pred, I_gt):
     type_iou = torch.Tensor([0.0]).to(T_gt.device)
     cnt = 0
     riou = compute_riou(one_hot_pred, one_hot_gt, pred_ind, gt_ind)
+    device = torch.device("cpu")
     for p_ind, g_ind in zip(pred_ind, gt_ind):
         gt_type_label = T_gt[I_gt == g_ind].mode()[0]
         try:
