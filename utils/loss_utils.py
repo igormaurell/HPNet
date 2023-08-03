@@ -99,7 +99,7 @@ def compute_miou(cluster_pred, I_gt):
     riou = compute_riou(one_hot_pred, one_hot_gt, pred_ind, gt_ind)
     k = riou.shape[0]
     mean_riou = riou.sum() / k
-    return mean_riou
+    return mean_riou, pred_ind
 
 
 def compute_type_miou(type_per_point, T_gt, cluster_pred, I_gt):

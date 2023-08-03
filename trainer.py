@@ -9,6 +9,8 @@ from utils.tf_visualizer import Visualizer as TfVisualizer
 from utils.main_utils import parameter_count, get_model_module
 from collections import defaultdict
 import time
+from tqdm import tqdm
+import h5py
 
 torch.backends.cudnn.benchmark = True
 torch.backends.cudnn.deterministic = True
@@ -17,6 +19,17 @@ def cuda_time():
     torch.cuda.synchronize()
     return time.time()
 
+def write_hdf5_result(filename, result):
+    with h5py.File(filename, 'w') as h5_file:
+        h5_file.create_dataset('points', data=result['points'][0].cpu().numpy())
+        h5_file.create_dataset('normals', data=result['normals'][0].cpu().numpy())
+        h5_file.create_dataset('prim', data=result['types'][0].cpu().numpy())
+        h5_file.create_dataset('T_param',  data=result['params'][0].cpu().numpy())
+        h5_file.create_dataset('labels', data=result['labels'][0].cpu().numpy())
+        if 'global_labels' in result:
+            h5_file.create_dataset('global_labels', data=result['global_labels'])
+        
+        print(h5_file)
 
 class Trainer(object):
     def __init__(self, opt):
@@ -169,7 +182,7 @@ class Trainer(object):
             self.optimizer.zero_grad()
 
             with torch.autograd.set_detect_anomaly(True):
-                total_loss, loss_dict = self.process_batch(batch_data_label)
+                total_loss, loss_dict, _ = self.process_batch(batch_data_label)
 
                 total_loss.backward()
 
@@ -230,17 +243,39 @@ class Trainer(object):
 
         print('\n\n##------------- EVAL -------------##\n')
 
-        for batch_idx, batch_data_label in enumerate(self.test_dataloader):
-            if batch_idx % 200 == 0:
-                print('Eval batch: %d' % (batch_idx))
+        for batch_idx, batch_data_label in enumerate(tqdm(self.test_dataloader)):
+            #if batch_idx % 200 == 0:
+            #    print('Eval batch: %d' % (batch_idx))
 
             for key in batch_data_label:
                 if not isinstance(batch_data_label[key], list):
                     batch_data_label[key] = batch_data_label[key].cuda()
 
             with torch.no_grad():
-                total_loss, loss_dict = self.process_batch(batch_data_label,
+                total_loss, loss_dict, result = self.process_batch(batch_data_label,
                                                            postprocess=True)
+                result['points'] = batch_data_label['gt_pc']
+                result['normals'] = batch_data_label['gt_normal']
+            
+            if self.opt.vis:
+                filepath = os.path.join(self.VIS_DIR, batch_data_label['index'][0] + '.h5')
+
+                if 'global_labels' in batch_data_label:
+                    gt_labels = batch_data_label['I_gt'][0].cpu().numpy()
+                    gt_global_labels = batch_data_label['global_labels'][0].cpu().numpy()
+                    unique_values, indices = np.unique(gt_labels, return_index=True)
+                    if unique_values[0] == -1:
+                        unique_values = unique_values[1:]
+                        indices = indices[1:]
+                    local_2_global_map = gt_global_labels[indices]
+                    global_labels = result['labels']
+                    print(np.unique(global_labels))
+                    not_minus_one_mask = global_labels != -1
+                    global_labels[not_minus_one_mask] = local_2_global_map[global_labels[not_minus_one_mask]]
+                    result['global_labels'] = global_labels
+
+                write_hdf5_result(filepath, result)
+                
 
             # Accumulate statistics and print out
             for key in loss_dict:

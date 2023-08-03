@@ -52,6 +52,7 @@ class ABCDataset(data.Dataset):
             normals = np.array(hf.get("normals"))
             primitives = np.array(hf.get("prim"))
             primitive_param = np.array(hf.get("T_param"))
+            global_labels = np.array(hf.get("global_labels")) if 'global_labels' in hf.keys() else None
         
         if self.augment:
             points = self.augment_routines[np.random.choice(np.arange(5))](points[None,:,:])[0]
@@ -85,6 +86,9 @@ class ABCDataset(data.Dataset):
         ret_dict['T_gt'] = primitives.astype(int)
 
         ret_dict['index'] = self.data_list[index]
+
+        if global_labels is not None:
+           ret_dict['global_labels'] = global_labels 
 
         # small_idx = label == -1
         # full_labels = label

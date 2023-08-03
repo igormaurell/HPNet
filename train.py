@@ -14,6 +14,8 @@ import scipy.stats as stats
 class MyTrainer(Trainer):
 
     def process_batch(self, batch_data_label, postprocess=False):
+
+        result = {}
  
         inputs_xyz_th = (batch_data_label['gt_pc']).float().cuda().permute(0,2,1)
         inputs_n_th = (batch_data_label['gt_normal']).float().cuda().permute(0,2,1)
@@ -22,7 +24,10 @@ class MyTrainer(Trainer):
             affinity_feat, type_per_point, normal_per_point, param_per_point, sub_idx = self.model(inputs_xyz_th, inputs_n_th, postprocess=postprocess)
         else:
             affinity_feat, type_per_point, param_per_point, sub_idx = self.model(inputs_xyz_th, inputs_n_th, postprocess=postprocess)
-        
+
+        result['types'] = type_per_point
+        result['params'] = param_per_point
+
         inputs_xyz_sub = torch.gather(inputs_xyz_th, -1, sub_idx.unsqueeze(1).repeat(1,3,1))
         N_gt = (batch_data_label['gt_normal']).float().cuda()
         N_gt = torch.gather(N_gt, 1, sub_idx.unsqueeze(-1).repeat(1,1,3))
@@ -100,12 +105,13 @@ class MyTrainer(Trainer):
             
             spec_cluster_pred = mean_shift(spectral_embedding, bandwidth=self.opt.bandwidth)
             cluster_pred = spec_cluster_pred
-            miou = compute_miou(spec_cluster_pred, I_gt)
+            miou, pred_ind = compute_miou(spec_cluster_pred, I_gt)
             loss_dict['miou'] = miou
             miou = compute_type_miou_abc(type_per_point, T_gt, cluster_pred, I_gt)
             loss_dict['type_miou'] = miou
+            result['labels'] = pred_ind
  
-        return total_loss, loss_dict
+        return total_loss, loss_dict, result
         
 
 if __name__=='__main__':
