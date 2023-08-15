@@ -21,15 +21,13 @@ def cuda_time():
 
 def write_hdf5_result(filename, result):
     with h5py.File(filename, 'w') as h5_file:
-        h5_file.create_dataset('points', data=result['points'][0].cpu().numpy())
-        h5_file.create_dataset('normals', data=result['normals'][0].cpu().numpy())
+        h5_file.create_dataset('points', data=result['points'])
+        h5_file.create_dataset('normals', data=result['normals'])
+        h5_file.create_dataset('gt_indices', data=result['gt_indices'][0].cpu().numpy())
         h5_file.create_dataset('prim', data=result['types'][0].cpu().numpy())
         h5_file.create_dataset('T_param',  data=result['params'][0].cpu().numpy())
         h5_file.create_dataset('labels', data=result['labels'][0].cpu().numpy())
-        if 'global_labels' in result:
-            h5_file.create_dataset('global_labels', data=result['global_labels'])
-        
-        print(h5_file)
+        h5_file.create_dataset('matching',  data=result['matching'])
 
 class Trainer(object):
     def __init__(self, opt):
@@ -241,6 +239,8 @@ class Trainer(object):
         self.model.eval()
         cnt = 0
 
+        filenames = []
+
         print('\n\n##------------- EVAL -------------##\n')
 
         for batch_idx, batch_data_label in enumerate(tqdm(self.test_dataloader)):
@@ -254,28 +254,17 @@ class Trainer(object):
             with torch.no_grad():
                 total_loss, loss_dict, result = self.process_batch(batch_data_label,
                                                            postprocess=True)
-                result['points'] = batch_data_label['gt_pc']
-                result['normals'] = batch_data_label['gt_normal']
             
             if self.opt.vis:
                 filepath = os.path.join(self.VIS_DIR, batch_data_label['index'][0] + '.h5')
+                filenames.append(batch_data_label['index'][0])
 
-                if 'global_labels' in batch_data_label:
-                    gt_labels = batch_data_label['I_gt'][0].cpu().numpy()
-                    gt_global_labels = batch_data_label['global_labels'][0].cpu().numpy()
-                    unique_values, indices = np.unique(gt_labels, return_index=True)
-                    if unique_values[0] == -1:
-                        unique_values = unique_values[1:]
-                        indices = indices[1:]
-                    local_2_global_map = gt_global_labels[indices]
-                    global_labels = result['labels']
-                    print(np.unique(global_labels))
-                    not_minus_one_mask = global_labels != -1
-                    global_labels[not_minus_one_mask] = local_2_global_map[global_labels[not_minus_one_mask]]
-                    result['global_labels'] = global_labels
+                gt_indices = result['gt_indices'][0].cpu().numpy()
 
-                write_hdf5_result(filepath, result)
-                
+                result['points'] = batch_data_label['gt_pc'][0].cpu().numpy()[gt_indices]
+                result['normals'] = batch_data_label['gt_normal'][0].cpu().numpy()[gt_indices]
+
+                write_hdf5_result(filepath, result)                
 
             # Accumulate statistics and print out
             for key in loss_dict:

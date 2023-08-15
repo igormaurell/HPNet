@@ -69,7 +69,7 @@ def compute_riou(W_pred, W_gt, pred_ind, gt_ind):
 
     W_pred_reordered = torch.gather(W_pred, -1, pred_ind)
     W_gt_reordered = torch.gather(W_gt, -1, gt_ind)
-
+    
     dot = torch.sum(W_gt_reordered * W_pred_reordered, dim=0)  # K
     denominator = torch.sum(W_gt_reordered, dim=0) + torch.sum(
         W_pred_reordered, dim=0) - dot
@@ -95,11 +95,10 @@ def compute_miou(cluster_pred, I_gt):
         one_hot_gt = get_one_hot(I_gt, I_gt.max() + 1)[0]
 
     pred_ind, gt_ind = hungarian_matching(npy(one_hot_pred), npy(one_hot_gt))
-
     riou = compute_riou(one_hot_pred, one_hot_gt, pred_ind, gt_ind)
     k = riou.shape[0]
     mean_riou = riou.sum() / k
-    return mean_riou, pred_ind
+    return mean_riou, pred_ind, gt_ind
 
 
 def compute_type_miou(type_per_point, T_gt, cluster_pred, I_gt):

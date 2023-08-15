@@ -25,8 +25,9 @@ class MyTrainer(Trainer):
         else:
             affinity_feat, type_per_point, param_per_point, sub_idx = self.model(inputs_xyz_th, inputs_n_th, postprocess=postprocess)
 
-        result['types'] = type_per_point
+        result['types'] = torch.argmax(type_per_point, dim=-1)
         result['params'] = param_per_point
+        result['gt_indices'] = sub_idx
 
         inputs_xyz_sub = torch.gather(inputs_xyz_th, -1, sub_idx.unsqueeze(1).repeat(1,3,1))
         N_gt = (batch_data_label['gt_normal']).float().cuda()
@@ -105,11 +106,16 @@ class MyTrainer(Trainer):
             
             spec_cluster_pred = mean_shift(spectral_embedding, bandwidth=self.opt.bandwidth)
             cluster_pred = spec_cluster_pred
-            miou, pred_ind = compute_miou(spec_cluster_pred, I_gt)
+            miou, pred_ind, gt_ind = compute_miou(spec_cluster_pred, I_gt)
             loss_dict['miou'] = miou
             miou = compute_type_miou_abc(type_per_point, T_gt, cluster_pred, I_gt)
             loss_dict['type_miou'] = miou
-            result['labels'] = pred_ind
+
+            result['labels'] = cluster_pred
+            matching = np.zeros(max(0, torch.max(cluster_pred) + 1), dtype=np.int32) - 1
+            if len(pred_ind) > 0:
+                matching[pred_ind] = gt_ind
+            result['matching'] = matching
  
         return total_loss, loss_dict, result
         
