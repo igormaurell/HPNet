@@ -71,7 +71,7 @@ class Trainer(object):
 
         parameter_count(self.model)
         
-        if torch.cuda.device_count() > 1:
+        if not self.opt.eval and torch.cuda.device_count() > 1:
             print("Let's use %d GPUs!" % (torch.cuda.device_count()))
             self.model = nn.DataParallel(self.model)
 
