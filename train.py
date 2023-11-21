@@ -10,6 +10,7 @@ from utils.main_utils import npy
 from utils.abc_utils import mean_shift, compute_entropy, construction_affinity_matrix_type, \
         construction_affinity_matrix_normal
 import scipy.stats as stats
+from src.mean_shift import MeanShift
 
 class MyTrainer(Trainer):
 
@@ -104,6 +105,9 @@ class MyTrainer(Trainer):
 
             spectral_embedding = torch.cat(weighted_list, dim=-1)
             
+            #ms = MeanShift()
+            #_, _, spec_cluster_pred = ms.guard_mean_shift(spectral_embedding, 0.015, 
+            #                                              50, kernel_type="gaussian")
             spec_cluster_pred = mean_shift(spectral_embedding, bandwidth=self.opt.bandwidth)
             cluster_pred = spec_cluster_pred
             miou, pred_ind, gt_ind = compute_miou(spec_cluster_pred, I_gt)

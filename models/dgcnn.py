@@ -341,7 +341,7 @@ class PrimitivesEmbeddingDGCNGn(nn.Module):
             cone_param = torch.cat([cone_normal, param_per_point[:, :, 18:22]], dim=2)
 
             param_per_point = torch.cat([sphere_param, plane_param, cylinder_param, cone_param], dim=2)
-            
+        
         if self.mode == 5:
             return embedding, type_per_point, normal_per_point, param_per_point, subidx.squeeze(1)
         else:
