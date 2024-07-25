@@ -32,7 +32,15 @@ class ABCDataset(data.Dataset):
             self.if_normal_noise = 0
 
        
-        self.data_list = [item.strip() for item in self.data_path.readlines()]
+        data_list = [item.strip() for item in self.data_path.readlines()]
+        self.data_list = []
+        for df in data_list:
+            data_file = os.path.join(self.root, df + '.h5')
+            with h5py.File(data_file, 'r') as hf:
+                num_points = len(np.array(hf.get("points")))
+            if num_points >= 7000:
+                self.data_list.append(df)
+
         self.skip = skip
         
         self.data_list = self.data_list[::self.skip]

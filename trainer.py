@@ -1,6 +1,6 @@
 import os
 import numpy as np
-import argparse
+import csv
 import torch
 from torch import nn
 import torch.utils.data
@@ -148,17 +148,19 @@ class Trainer(object):
             from dataloader.ABCDataset import ABCDataset
             Dataset = ABCDataset
 
-        train_dataset = Dataset(DATA_PATH,
-                                TRAIN_DATASET,
-                                opt=self.opt,
-                                skip=self.opt.train_skip,
-                                fold=self.opt.train_fold)
-        test_dataset = Dataset(DATA_PATH, TEST_DATASET, opt=self.opt, skip=self.opt.val_skip)
-
         num_workers = 0 if self.opt.debug else 4
 
-        self.train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=self.opt.batch_size, \
-                shuffle=True, num_workers=num_workers, worker_init_fn=my_worker_init_fn)
+        if not self.opt.eval:
+            train_dataset = Dataset(DATA_PATH,
+                                    TRAIN_DATASET,
+                                    opt=self.opt,
+                                    skip=self.opt.train_skip,
+                                    fold=self.opt.train_fold)
+
+            self.train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=self.opt.batch_size, \
+                    shuffle=True, num_workers=num_workers, worker_init_fn=my_worker_init_fn)
+
+        test_dataset = Dataset(DATA_PATH, TEST_DATASET, opt=self.opt, skip=self.opt.val_skip)
 
         self.test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=1, \
                 shuffle=False, num_workers=num_workers, worker_init_fn=my_worker_init_fn)
@@ -276,6 +278,12 @@ class Trainer(object):
             print('%s: %f' % (key, stat_dict[key] / cnt),
                   end=' ')
         
+        with open(os.path.join(self.VIS_DIR, 'val_data.txt'), 'w') as f:
+            f.write('\n'.join(filenames))
+        with open(os.path.join(self.VIS_DIR, 'test_data.txt'), 'w') as f:
+            f.write('\n'.join(filenames))
+        open(os.path.join(self.VIS_DIR, 'train_data.txt'), 'w').close()
+
         print('\n\n##------------- END -------------##\n')
         # Log statistics
         BATCH_SIZE = self.test_dataloader.batch_size

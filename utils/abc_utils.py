@@ -5,7 +5,10 @@ from pykdtree.kdtree import KDTree
 from utils.main_utils import npy, v
 from sklearn.cluster import MeanShift
 from utils.spec_utils import *
-import time
+import os
+from pathlib import Path
+
+dir_path = Path(os.path.dirname(os.path.realpath(__file__))).resolve().parents[0]
 
 def map_type_gt(T_gt):
     T_gt[T_gt == 0] = 9
@@ -34,7 +37,7 @@ def mean_shift(x, bandwidth):
 
 def initialize_open_spline_model(mode=0):
     from models.splinenet import DGCNNControlPoints
-    modelname = 'log/pretrained_models/open_spline.pth'
+    modelname = os.path.join(dir_path, 'log/pretrained_models/open_spline.pth')
 
     control_decoder_ = DGCNNControlPoints(20, num_points=10, mode=mode)
     control_decoder = torch.nn.DataParallel(control_decoder_)
@@ -48,7 +51,7 @@ def initialize_open_spline_model(mode=0):
 
 def initialize_closed_spline_model(mode=1):
     from models.splinenet import DGCNNControlPoints
-    modelname = 'log/pretrained_models/closed_spline.pth'
+    modelname = os.path.join(dir_path, 'log/pretrained_models/closed_spline.pth')
 
     control_decoder_ = DGCNNControlPoints(20, num_points=10, mode=mode)
     control_decoder = torch.nn.DataParallel(control_decoder_)
